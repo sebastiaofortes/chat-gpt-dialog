@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dialog GPT</title>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<style>
+    html,
+    body {
+        height: 99%;
+        width: 99%;
+        background-color: rgb(43, 43, 43);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .linha {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+
+    .dividir-em-colunas {
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+    }
+
+    /* Divide em linhas */
+    .dividir-em-linhas {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .coluna-esquerda {
+        background-color: black;
+        color: white;
+        width: 25%;
+    }
+
+    .coluna-central {
+        color: white;
+        display: flex;
+        width: 60%;
+    }
+
+    .coluna-central-inversa {
+        display: flex;
+        flex-direction: column-reverse;
+        color: white;
+        flex-grow: 1
+    }
+
+
+    .coluna-direita {
+        background-color: black;
+        color: white;
+        width: 20%;
+    }
+
+    .custom-textarea {
+        background-color: rgb(43, 43, 43);
+        color: white;
+    }
+
+    h1,
+    p {
+        margin-left: 20px;
+    }
+
+    button {
+        background-color: rgb(43, 43, 43);
+        color: white;
+    }
+</style>
+
+<body>
+    <div class="dividir-em-colunas">
+        <div class="dividir-em-linhas, coluna-esquerda">
+            <h1>Configurações</h1>
+            <div class="linha">
+                <label id="lblSpeak"><input id="chkSpeak" type="checkbox" onclick="SpeechToText()" />Falar</label>
+            </div>
+            <div class="linha">
+                <label>
+                    Idioma (Audição e Leitura):
+                    <select id="SelectLanguage">
+                        <option value="pt-BR">Português (Brasil)</option>
+                        <option value="en-US">Inglês (Estados Unidos)</option>
+                        <option value="en-GB">Inglês (Reino Unido)</option>
+                        <option value="en-AU">Inglês (Austrália)</option>
+                        <option value="es-ES">Espanhol (Espanha)</option>
+                        <option value="es-MX">Espanhol (México)</option>
+                        <option value="es-AR">Espanhol (Argentina)</option>
+                    </select>
+                    </label>
+            </div>
+            <div class="linha">
+            <button id="stopButton">Interromper Leitura</button>
+            </div>
+            <div class="linha">
+                <label for="key-input">Chave:</label>
+                <input type="text" id="key-input" value="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" />
+            </div>
+            <div class="linha">
+                <label for="selModel">Modelo:</label>
+                <select id="selModel">
+                    <option value="gpt-4-turbo-preview">gpt-4-turbo-preview</option>
+                    <option value="gpt-4-turbo-2024-04-09">gpt-4-turbo-2024-04-09</option>
+                    <option value="gpt-3.5-turbo-0125">gpt-3.5-turbo-0125</option>
+                </select>
+            </div>
+            <div class="linha">
+                <label for="valor">Temperatura:</label><br>
+                <input type="range" id="valor" name="valor" min="0" max="20" step="0.1">
+                <output for="valor" id="valorOutput" name="valorOutput">1</output>
+            </div>
+            <div class="linha">
+                <label for="maxoftokens">Max. Tokens:</label><br>
+                <input type="number" id="maxoftokens" name="maxoftokens" min="100" max="2048" value="2048">
+            </div>
+            <div class="linha"> 
+                <p>
+                    Não me responsa nada ainda. Vamos simular uma conversa onde você é um paraente meu de um páis distante, que fala espanhol, e que seu nome é Diego, ok?
+                </p>
+            </div>
+        </div>
+
+        <div class="dividir-em-linhas, coluna-central">
+            <h1>Chat</h1>
+            <div class="coluna-central-inversa">
+
+                <div class="linha">
+
+                    <label for="chat-input">Prompt:</label><br />
+                    <textarea id="chat-input" class="custom-textarea" rows="5" cols="50"></textarea>
+
+
+                </div>
+                <div class="linha">
+                    <button type="button" onclick="SendToChatGPT()" id="btnSend"><i
+                        class="fas fa-paper-plane"></i></button>
+                </div>
+
+                <div class="linha" style="flex-grow: 1;">
+
+                    <textarea id="chat-output" rows="40" cols="100" class="custom-textarea"></textarea>
+
+                    <br />
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="dividir-em-linhas, coluna-direita">
+
+            <h1>Estatísticas</h1>
+
+            <div id="mensagensDiv"></div>
+
+            <p id="completion_tokens"></p>
+            <p id="prompt_tokens"></p>
+            <p id="total_tokens"></p>
+
+        </div>
+
+    </div>
+
+</body>
+
+<script>
+
+    const valorInput = document.getElementById('valor');
+    const valorOutput = document.getElementById('valorOutput');
+
+    valorInput.addEventListener('input', function () {
+        valorOutput.textContent = (this.value / 10).toFixed(1);
+    });
+
+    // Suponde que você guarde o histórico da conversa numa variável chamada `contextoHistorico`
+    var contextoHistorico = [];
+
+    async function SendToChatGPT() {
+        // Coletando a pergunta
+        var inputElement = document.getElementById('chat-input');
+        var sQuestion = inputElement.value;
+
+        var temperature = valorOutput.value;
+        var maxtokens = maxoftokens.value;
+
+        Output = document.getElementById('chat-output');
+        Output.value += "\nMe: " + sQuestion + "\n";
+
+        inputElement.value = '';
+
+        EscreverMensagens("Enviando...");
+
+        // Enviando para o stream
+        var response = await streamChatGPTResponse(sQuestion, temperature, maxtokens);
+
+        LimparMensagens();
+
+        //Verifica status da resposta
+        if (response.status != 200) {
+            EscreverMensagens("Erro ao realizar requisição")
+            return;
+        }
+        console.log(response)
+        // Processa a resposta
+        var jsonChunk = await ProcessaResposta(response, sQuestion);
+        // Escreve o resultado
+        EscreverResultado(jsonChunk)
+        // TESTE: Escreve o resultado
+        FalarResultado(jsonChunk)
+        //Mostra a quantidade de tokens utilizados
+        AnalizarQuantidadeDeTokensUtilizados(jsonChunk)
+    }
+
+    async function streamChatGPTResponse(prompt, temperature, maxtokens) {
+        const endpoint = "https://api.openai.com/v1/chat/completions";
+        const apiKey = document.getElementById('key-input').value;
+        const params = {
+            max_tokens: parseInt(maxtokens),
+            temperature: parseFloat(temperature),
+            model: document.getElementById("selModel").value,
+            messages: [...contextoHistorico, {
+                role: "user",
+                content: prompt
+            }]
+        };
+
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + apiKey,
+            },
+            body: JSON.stringify(params)
+        });
+
+        return response;
+    }
+
+    async function ProcessaResposta(response, pergunta) {
+        if (response.status != 200) {
+            EscreverMensagens("Erro ao realizar requisição: " + response)
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        const chatOutput = document.getElementById("chat-output");
+
+        // Processa o stream
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            // Decodifica o chunk e processa o JSON
+            const chunk = decoder.decode(value, { stream: true });
+            var jsonChunk;
+            try {
+                jsonChunk = JSON.parse(chunk);
+                console.log(jsonChunk)
+                if (jsonChunk.choices && jsonChunk.choices.length > 0) {
+                    // Atualiza o contexto com a pergunta do usuário e a resposta da API
+                    atualizarContexto(pergunta, jsonChunk.choices[0].message.content);
+
+                }
+            } catch (error) {
+                // Ignora erros de parsing, pois alguns chunks podem não formar um JSON válido sozinhos
+            }
+            return jsonChunk;
+        }
+    }
+
+    // Função para adicionar mensagens ao contexto histórico
+    function atualizarContexto(pergunta, resposta) {
+        // Limite o histórico para evitar enviar solicitações muito grandes
+        const maxHistorico = 5;
+        if (contextoHistorico.length > maxHistorico * 2) {
+            contextoHistorico = contextoHistorico.slice(-maxHistorico * 2);
+        }
+        contextoHistorico.push({ role: "user", content: pergunta });
+        contextoHistorico.push({ role: "assistant", content: resposta });
+    }
+
+    function AnalizarQuantidadeDeTokensUtilizados(jsonChunk) {
+        console.log(jsonChunk.usage)
+        var completion_tokens = jsonChunk.usage.completion_tokens
+        var prompt_tokens = jsonChunk.usage.prompt_tokens
+        var total_tokens = jsonChunk.usage.total_tokens
+
+        document.getElementById('completion_tokens').textContent = "Completion tokens: " + completion_tokens;
+        document.getElementById('prompt_tokens').textContent = "Prompt tokens: " + prompt_tokens;
+        document.getElementById('total_tokens').textContent = "Total tokens: " + total_tokens;
+    }
+
+    function EscreverResultado(jsonChunk) {
+        var chatOutput = document.getElementById('chat-output')
+        const content = jsonChunk.choices[0].message.content;
+        chatOutput.value += content + "\n"; // Adiciona o conteúdo ao textarea                
+    }
+
+    function FalarResultado(jsonChunk) {
+        var chatOutput = document.getElementById('chat-output')
+        const content = jsonChunk.choices[0].message.content;
+        //chatOutput.value += content + "\n"; // Adiciona o conteúdo ao textarea                
+        // Verifica se a API de síntese de voz está disponível
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.lang = SelectLanguage.value; // Define o idioma da fala
+            speechSynthesis.speak(utterance);
+        } else {
+            alert("A API de síntese de voz não é suportada neste navegador.");
+        }
+    }
+
+    function EscreverMensagens(mensagem) {
+        const resultadoDiv = document.getElementById("mensagensDiv");
+        const resultadoP = document.createElement("p");
+        resultadoP.textContent = mensagem;
+        resultadoDiv.appendChild(resultadoP);
+    }
+
+    function LimparMensagens() {
+        const div = document.getElementById("mensagensDiv");
+        while (div.firstChild) {
+            div.removeChild(div.firstChild);
+        }
+    }
+
+    var oSpeechRecognizer = null
+
+    function SpeechToText() {
+
+        inputRes = document.getElementById("chat-input");
+
+        if (oSpeechRecognizer) {
+
+            if (chkSpeak.checked) {
+                oSpeechRecognizer.start();
+            } else {
+                oSpeechRecognizer.stop();
+            }
+
+            return;
+        }
+
+        oSpeechRecognizer = new webkitSpeechRecognition();
+        oSpeechRecognizer.continuous = true;
+        oSpeechRecognizer.interimResults = true;
+        oSpeechRecognizer.lang = SelectLanguage.value;
+        oSpeechRecognizer.start();
+
+        oSpeechRecognizer.onresult = function (event) {
+            var interimTranscripts = "";
+            for (var i = event.resultIndex; i < event.results.length; i++) {
+                var transcript = event.results[i][0].transcript;
+
+                if (event.results[i].isFinal) {
+                    inputRes.value = transcript;
+                    SendToChatGPT();
+                } else {
+                    transcript.replace("\n", "<br>");
+                    interimTranscripts += transcript;
+                }
+            }
+        };
+
+        oSpeechRecognizer.onerror = function (event) {
+
+        };
+
+    }
+
+    // Ação para interromper a leitura
+    document.getElementById('stopButton').addEventListener('click', function () {
+        if ('speechSynthesis' in window) {
+            speechSynthesis.cancel(); // Interrompe a leitura
+        } else {
+            alert("A API de síntese de voz não é suportada neste navegador.");
+        }
+    });
+
+</script>
+
+</html>
