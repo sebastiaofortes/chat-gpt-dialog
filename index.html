@@ -251,7 +251,7 @@
 
     async function ProcessaResposta(response, pergunta) {
         if (response.status != 200) {
-            EscreverMensagens("Erro ao realizar requisição")
+            EscreverMensagens("Erro ao realizar requisição: " + response)
             return;
         }
 
