@@ -83,9 +83,10 @@
 <body>
     <div class="dividir-em-colunas">
         <div class="dividir-em-linhas, coluna-esquerda">
-            <h1>Configurações</h1>
+            <h1>Configurações (sem continous)</h1>
             <div class="linha">
                 <label id="lblSpeak"><input id="chkSpeak" type="checkbox" onclick="SpeechToText()" />Falar</label>
+                <button id="recordButton">Segure para Gravar</button>
             </div>
             <div class="linha">
                 <label>
@@ -362,8 +363,8 @@
         }
 
         oSpeechRecognizer = new webkitSpeechRecognition();
-        oSpeechRecognizer.continuous = true;
-        oSpeechRecognizer.interimResults = true;
+        //oSpeechRecognizer.continuous = true;
+        oSpeechRecognizer.interimResults = false;
         oSpeechRecognizer.lang = SelectLanguage.value;
         oSpeechRecognizer.start();
 
@@ -396,6 +397,14 @@
             alert("A API de síntese de voz não é suportada neste navegador.");
         }
     });
+
+    recordButton.addEventListener('mousedown', () => {
+        SpeechToText()
+      });
+
+      recordButton.addEventListener('mouseup', () => {
+        SpeechToText()
+      });
 
 </script>
 
